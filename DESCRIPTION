@@ -4,8 +4,8 @@ Title: CASDA Package
 Version: 0.1.0
 Author: Justin Dyck
 Maintainer: Justin Dyck <justin.dyck@umanitoba.ca>
-Description: Data sets, and shapefiles for CASDA team members.
-License: Open Source
+Description: Data sets, helper functions, and shapefiles for CASDA team members.
+License: GNU GPL v3.0
 Encoding: UTF-8
 LazyData: true
 import: sf
