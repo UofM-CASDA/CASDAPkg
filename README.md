@@ -11,6 +11,8 @@ Then use this command for documentation:
 
 vignette(package="CASDAPkg", topic = "CASDAPkg_documentation")
 
+You may need to install the knitr and sf packages prior to installing this one.  
+
 Currently this package is very basic and is meant to be a start to building something more complete.
 
 Let me know if you would like to be part of the team working on it!
