@@ -1,0 +1,14 @@
+Package: CASDAPkg
+Type: Package
+Title: CASDA Package
+Version: 0.1.0
+Author: Justin Dyck
+Maintainer: Justin Dyck <justin.dyck@umanitoba.ca>
+Description: Data sets, and shapefiles for CASDA team members.
+License: Open Source
+Encoding: UTF-8
+LazyData: true
+import: sf
+RoxygenNote: 7.1.1
+Suggests: knitr
+VignetteBuilder: knitr

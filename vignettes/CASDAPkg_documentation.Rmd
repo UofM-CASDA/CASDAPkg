@@ -1,0 +1,36 @@
+---
+title: "CASDAPkg"
+author: "Justin Dyck"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+The intention of this package is to package up useful functions, data, and shapefiles into one place for CASDA team members. Currently this package is mainly shapefiles, and a cleaner version of the census. 
+
+# Shapefiles
+
+Currently there are 3 shapefiles in the simple feature (sf) format. Using the __sf__ package will allow easier manipulation of these shapefiles which incedentally uses similar sytax to dplyr and the tidyverse, making work flows much smoother. These files are:
+- __CAN_PROV_ShapeFile__ : ShapeFile for the Canadian provinces.
+- __MB_DA_ShapeFile__ : ShapeFile for dissemination areas in Manitoba
+- __MB_RHAD_ShapeFile__ : ShapeFile for health districts and neioghborhood clusters in Manitoba
+
+# Census Data 
+
+__MB_DA_CensuisDataSet__ is the census data file for 2016. It is tidied up a bit and contains census responses aggregated by dissemination area's in Manitoba.
+
+# Support
+
+Let me know if there is anything that would be helpful for this package, or if you would like access to the project to help build it into something more complete.
