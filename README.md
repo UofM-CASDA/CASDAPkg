@@ -7,7 +7,7 @@ devtools::install_github("UofM-CASDA/CASDAPkg")
 
 in the R console.
 
-Then use this command for documentation:
+Then use this command for documentation and some helpful examples using these data sets:
 
 vignette(package="CASDAPkg", topic = "CASDAPkg_documentation")
 
