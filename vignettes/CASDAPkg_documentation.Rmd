@@ -2,7 +2,7 @@
 title: "CASDAPkg"
 author: "Justin Dyck"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: html_document
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -16,21 +16,154 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Introduction
+## Description
 
 The intention of this package is to package up useful functions, data, and shapefiles into one place for CASDA team members. Currently this package is mainly shapefiles, and a cleaner version of the census. 
 
-# Shapefiles
+### Shapefiles
 
 Currently there are 3 shapefiles in the simple feature (sf) format. Using the __sf__ package will allow easier manipulation of these shapefiles which incedentally uses similar sytax to dplyr and the tidyverse, making work flows much smoother. These files are:
 - __CAN_PROV_ShapeFile__ : ShapeFile for the Canadian provinces.
 - __MB_DA_ShapeFile__ : ShapeFile for dissemination areas in Manitoba
 - __MB_RHAD_ShapeFile__ : ShapeFile for health districts and neioghborhood clusters in Manitoba
 
-# Census Data 
+### Census Data 
 
-__MB_DA_CensuisDataSet__ is the census data file for 2016. It is tidied up a bit and contains census responses aggregated by dissemination area's in Manitoba.
+__MB_DA_CensusDataSet__ is the census data file for 2016. It is tidied up a bit and contains census responses aggregated by dissemination area's in Manitoba.
 
-# Support
+### Support
 
 Let me know if there is anything that would be helpful for this package, or if you would like access to the project to help build it into something more complete.
+
+## Examples
+
+### Using tmap
+
+For this section, I'll show how to map some of the census variables in the census file using the MB_DA_ShapeFile.
+
+```{r fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+#Call libraries
+
+library(CASDAPkg)
+library(sf)
+library(tmap)
+library(tidyverse)
+library(colorspace)
+
+# First we need to clean and join the data to the ShapeFile
+
+income_data = MB_DA_CensusDataSet %>% 
+  mutate(DAUID = as.character(geography)) %>%
+  select(DAUID,median_hh_income)
+
+shapefile = left_join(MB_DA_ShapeFile,income_data)
+
+# And now we construct the map
+
+tm_shape(shapefile) +
+  tm_polygons("median_hh_income",
+              style = "quantile",
+              palette = sequential_hcl(5, "Oslo"),
+              title = "Median Household Income ($)") +
+  tm_layout(title = "MB Income Levels by Dissemination Area")
+
+```
+
+Here we can't see Winnipeg at all, so we can split this into 2 maps and then merge back together.
+
+```{r fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+
+mb_map = tm_shape(shapefile) +
+  tm_polygons("median_hh_income",
+              style = "quantile",
+              palette = sequential_hcl(5, "Oslo"),
+              title = "Median Household Income ($)") +
+  tm_layout(title = "MB Income Levels by Dissemination Area")
+
+wpg_map = tm_shape(shapefile %>% filter(CSDNAME == "Winnipeg")) +
+  tm_polygons("median_hh_income",
+              style = "quantile",
+              palette = sequential_hcl(5, "Oslo"),
+              title = "Median Household Income ($)") +
+  tm_layout(title = "Winnipeg Income Levels by Dissemination Area")
+
+tmap_arrange(mb_map,wpg_map)
+```
+
+We can also display multiple maps using a facet_wrap. Here the facet's should be on the same scale, where this is helpful when displaying different years of data for example. For this we will use the family data in the census, and display a map for proportion of couples with no child, couples with 2, and couples with 3+.
+
+First we need to clean the data a bit, and make it into the 'long' form.
+
+```{r fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+
+family_data = MB_DA_CensusDataSet %>% 
+  mutate(DAUID = as.character(geography),
+         `No Children` = round((couples_no_child/total_families)*100,1),
+         `One Child` = round((couples_one_child/total_families)*100,1),
+         `Two Children` = round((couples_2_child/total_families)*100,1),
+         `3+ Children` = round((couples_3_plus_child/total_families)*100,1)) %>% 
+  select(DAUID, `No Children`, `One Child`, `Two Children`, `3+ Children`) %>%
+  pivot_longer(cols = `No Children`:`3+ Children`,
+               names_to = "Family Type",
+               values_to = "Percentage") %>%
+  mutate(`Family Type` = fct_reorder(`Family Type`, match(`Family Type`,
+                                                          c("No Children",
+                                                            "One Child",
+                                                            "Two Children",
+                                                            "3+ Children"))))
+
+fam_shapefile = full_join(MB_DA_ShapeFile,family_data) %>% replace_na(list(Percentage=0))
+
+tm_shape(fam_shapefile)+
+  tm_polygons("Percentage",
+              style = "quantile",
+              palette = sequential_hcl(5, "Oslo"),
+              title = "Percentage of Family Type") +
+  tm_layout(title = "Manitoba Family Size Percentage")+
+  tm_facets(by="Family Type", nrow=2)
+
+```
+
+And again, we can do this for Winnipeg exclusively:
+
+```{r fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+
+tm_shape(fam_shapefile %>% filter(CSDNAME == "Winnipeg"))+
+  tm_polygons("Percentage",
+              style = "quantile",
+              palette = sequential_hcl(5, "Oslo"),
+              title = "Percentage of Family Type") +
+  tm_layout(title = "Winnipeg Family Size Percentage")+
+  tm_facets(by="Family Type", nrow=2)
+
+```
+
+### Using leaflet
+
+As this is an rmarkdown document which knit's into a html, we can also make the maps interactive, so that we can zoom in/out of specific areas. We'll do this with the leaflet package using the income data from above.
+
+```{r fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+
+library(leaflet)
+
+# Add some helpful pop ups to identify data elements when clicking on a region:
+
+shapefile = shapefile %>% 
+  mutate(popup = paste0("<strong>Region: </strong>", CDNAME,
+                        "<br><strong> Median Household Income: </strong>$", median_hh_income))
+
+
+pal = colorNumeric(palette = sequential_hcl(5,"Oslo"),
+                    domain = shapefile$median_hh_income)
+
+leaflet() %>%addProviderTiles(providers$CartoDB.Positron) %>%
+            setView(lng = -93.85, lat = 60, zoom = 4)%>%
+            addPolygons(data = shapefile, weight=1, color="#000000",
+                        fillOpacity = 0.5, smoothFactor = 0.1,
+                        fillColor = ~pal(shapefile$median_hh_income),
+                        popup = shapefile$popup) %>%
+            addLegend("bottomleft", pal = pal, values = quantile(shapefile$median_hh_income,na.rm=T),
+                      title = "Median Household Income",
+                      opacity = 1)
+
+```
